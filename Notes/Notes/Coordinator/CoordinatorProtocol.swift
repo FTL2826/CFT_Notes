@@ -13,6 +13,6 @@ protocol Coordinator: AnyObject {
     var navigationController: UINavigationController { get }
     func start()
     func showNewNoteScreen()
-    func showExistNoteScreen(for index: Int)
+    func showExistNoteScreen(for indexPath: IndexPath)
     func popBack()
 }

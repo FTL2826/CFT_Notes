@@ -34,8 +34,8 @@ class AppCoordinator: Coordinator {
         navigationController.pushViewController(vc, animated: true)
     }
     
-    func showExistNoteScreen(for index: Int) {
-        let vc = factory.createExistNoteVC(coordinator: self, for: index)
+    func showExistNoteScreen(for indexPath: IndexPath) {
+        let vc = factory.createExistNoteVC(coordinator: self, for: indexPath)
         
         navigationController.pushViewController(vc, animated: true)
     }

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData.NSFetchedResultsController
 
 class ListViewController: UIViewController {
     
@@ -45,6 +46,7 @@ class ListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        viewModel.fetchFromDB()
         tableView.reloadData()
     }
     
@@ -53,6 +55,11 @@ class ListViewController: UIViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .add, primaryAction: UIAction { [weak self] _ in
             self?.coordinator?.showNewNoteScreen()
+        })
+        
+        navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .refresh, primaryAction: UIAction { [weak self] _ in
+            self?.viewModel.fetchFromDB()
+            self?.tableView.reloadData()
         })
         
         view.addSubview(tableView)
@@ -72,11 +79,11 @@ class ListViewController: UIViewController {
 extension ListViewController: UITableViewDelegate, UITableViewDataSource {
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        1
+        viewModel.numberOfSections()
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.rowsInTable()
+        viewModel.rowsInTable(for: section)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -85,26 +92,40 @@ extension ListViewController: UITableViewDelegate, UITableViewDataSource {
             cell = UITableViewCell(style: .subtitle, reuseIdentifier: identifier)
         }
         guard let cell = cell else { fatalError("couldnt create cell") }
-        
         cell.accessoryType = .disclosureIndicator
         
-        cell.textLabel?.text = viewModel.titleForRow(index: indexPath.item)
+        let note = viewModel.fetchNote(for: indexPath)
+        cell.textLabel?.text = note.title
         cell.textLabel?.font = UIFont.systemFont(ofSize: 22, weight: .bold)
         
-        cell.detailTextLabel?.text = viewModel.subtitleForRow(index: indexPath.item)
+        cell.detailTextLabel?.text = viewModel.dateToSubtitle(date: note.date)
         cell.detailTextLabel?.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        coordinator?.showExistNoteScreen(for: indexPath.item)
+        coordinator?.showExistNoteScreen(for: indexPath)
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        viewModel.deleteNote(for: indexPath.item)
-        tableView.deleteRows(at: [indexPath], with: .automatic)
+        switch editingStyle {
+        case .delete:
+            viewModel.deleteNote(for: indexPath)
+        @unknown default:
+            break
+        }
     }
     
 }
 
+extension ListViewController: NSFetchedResultsControllerDelegate {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        guard let indexPath = indexPath else { return }
+        switch type {
+        case .delete:
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        default: break
+        }
+    }
+}
