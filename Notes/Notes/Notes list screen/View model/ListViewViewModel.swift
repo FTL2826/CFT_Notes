@@ -9,37 +9,54 @@ import Foundation
 
 protocol ListViewViewModelProtocol {
     
-    func rowsInTable() -> Int
-    func titleForRow(index: Int) -> String
-    func subtitleForRow(index: Int) -> String
-    func deleteNote(for index: Int)
+    func numberOfSections() -> Int
+    func rowsInTable(for section: Int) -> Int
+    func fetchNote(for indexPath: IndexPath) -> Notes
+    func dateToSubtitle(date: Date) -> String
+    func fetchFromDB()
+    func deleteNote(for indexPath: IndexPath)
 }
 
 class ListViewViewModel: ListViewViewModelProtocol {
     
-    var dataManager: DataManagerProtocol
+    var persistentProvider: PersistentProviderProtocol
     let dateFormatter = DateFormatter()
     
-    init(dataManager: DataManagerProtocol) {
-        self.dataManager = dataManager
+    init(persistentProvider: PersistentProviderProtocol) {
+        self.persistentProvider = persistentProvider
         dateFormatter.dateFormat = "dd-MM-yyyy"
     }
     
-    func rowsInTable() -> Int {
-        return dataManager.notes.count
+    func numberOfSections() -> Int {
+        return persistentProvider.fetchController.sections?.count ?? 0
     }
     
-    func titleForRow(index: Int) -> String {
-        return dataManager.notes[index].title
+    func rowsInTable(for section: Int) -> Int {
+        let sectionInfo = persistentProvider.fetchController.sections?[section]
+        return sectionInfo?.numberOfObjects ?? 0
     }
     
-    func subtitleForRow(index: Int) -> String {
-        let str = dateFormatter.string(from: dataManager.notes[index].date)
+    func fetchNote(for indexPath: IndexPath) -> Notes {
+        let note = persistentProvider.fetchController.object(at: indexPath)
+        return note
+    }
+    
+    func dateToSubtitle(date: Date) -> String {
+        let str = dateFormatter.string(from: date)
         return str
     }
     
-    func deleteNote(for index: Int) {
-        dataManager.deleteNote(for: index)
+    func fetchFromDB() {
+        do {
+            try persistentProvider.fetchController.performFetch()
+        } catch {
+            print("Fetch controller error:", error.localizedDescription)
+        }
     }
+    
+    func deleteNote(for indexPath: IndexPath) {
+        persistentProvider.deleteNote(at: indexPath)
+    }
+    
     
 }

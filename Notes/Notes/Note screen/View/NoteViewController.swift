@@ -12,7 +12,7 @@ class NoteViewController: UIViewController {
     var viewModel: NoteViewViewModelProtocol
     weak var coordinator: Coordinator?
     
-    var index: Int?
+    var indexPath: IndexPath?
     
     lazy var titleTextField: UITextField = {
         let tf = UITextField()
@@ -25,17 +25,18 @@ class NoteViewController: UIViewController {
         let tv = UITextView()
         tv.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         tv.isScrollEnabled = true
+        tv.delegate = self
         return tv
     }()
     
     init(
         viewModel: NoteViewViewModelProtocol,
         coordinator: Coordinator,
-        index: Int? = nil
+        indexPath: IndexPath? = nil
     ) {
         self.viewModel = viewModel
         self.coordinator = coordinator
-        self.index = index
+        self.indexPath = indexPath
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -52,10 +53,26 @@ class NoteViewController: UIViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .save, primaryAction: UIAction {[weak self] _ in
             guard let title = self?.titleTextField.text,
-                  let note = self?.noteTextView.text else { return }
-            self?.viewModel.saveNote(index: self?.index, title: title, noteContex: note)
+                  let note = self?.noteTextView.attributedText else { return }
+            self?.viewModel.saveNote(for: self?.indexPath, title: title, noteContex: note)
             self?.coordinator?.popBack()
         })
+    }
+    
+    @objc func runCut() {
+        print("DEBUG PRINT:", "cut")
+    }
+    @objc func runCopy() {
+        print("DEBUG PRINT:", "copy")
+    }
+    @objc func runPaste() {
+        print("DEBUG PRINT:", "paste")
+    }
+    @objc func runPasteSearch() {
+        print("DEBUG PRINT:", "pastesearch")
+    }
+    @objc func runLook() {
+        print("DEBUG PRINT:", "look")
     }
     
     private func setupUI() {
@@ -80,10 +97,10 @@ class NoteViewController: UIViewController {
     }
     
     private func populateView() {
-        guard let index = index else { return }
-        let note = viewModel.fetchNote(for: index)
+        guard let indexPath = indexPath else { return }
+        let note = viewModel.fetchNote(for: indexPath)
         titleTextField.text = note.title
-        noteTextView.text = note.note
+        noteTextView.attributedText = note.noteContex
     }
 
 }
@@ -107,7 +124,21 @@ extension NoteViewController: UITextFieldDelegate {
         }
         return true
     }
-    
-    
-    
+}
+
+extension NoteViewController: UITextViewDelegate {
+    func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        var additionalActions: [UIMenuElement] = []
+        if range.length > 0 {
+            let highlightAction = UIAction(title: "Highlight", image: UIImage(systemName: "highlighter")) { action in
+                // The highlight action.
+            }
+            additionalActions.append(highlightAction)
+        }
+        let addBookmarkAction = UIAction(title: "Add Bookmark", image: UIImage(systemName: "bookmark")) { action in
+            // The bookmark action.
+        }
+        additionalActions.append(addBookmarkAction)
+        return UIMenu(children: additionalActions + suggestedActions)
+    }
 }

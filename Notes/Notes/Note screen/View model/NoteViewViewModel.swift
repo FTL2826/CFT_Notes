@@ -8,29 +8,29 @@
 import Foundation
 
 protocol NoteViewViewModelProtocol {
-    func saveNote(index: Int?, title: String, noteContex: String)
-    func fetchNote(for index: Int) -> Note
+    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSAttributedString)
+    func fetchNote(for indexPath: IndexPath) -> Notes
 }
 
 class NoteViewViewModel: NoteViewViewModelProtocol {
     
-    var dataManager: DataManagerProtocol
+    var persistentProvider: PersistentProviderProtocol
     
-    init(dataManager: DataManagerProtocol) {
-        self.dataManager = dataManager
+    init(persistentProvider: PersistentProviderProtocol) {
+        self.persistentProvider = persistentProvider
     }
     
-    func saveNote(index: Int?, title: String, noteContex: String) {
-        guard let index = index else {
-            let note = Note(title: title, note: noteContex, date: Date())
-            dataManager.createNewNote(note: note)
+    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSAttributedString) {
+        guard let indexPath = indexPath else {
+            persistentProvider.saveNewNote(title: title, noteContext: noteContex)
             return
         }
-        dataManager.replaceNote(for: index, note: Note(title: title, note: noteContex, date: Date()))
+        persistentProvider.updateNote(for: indexPath, title: title, noteContext: noteContex)
     }
     
-    func fetchNote(for index: Int) -> Note {
-        return dataManager.fetchNote(for: index)
+    func fetchNote(for indexPath: IndexPath) -> Notes {
+        let note = persistentProvider.fetchController.object(at: indexPath)
+        return note
     }
     
 }
