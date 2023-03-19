@@ -44,4 +44,16 @@ class AppCoordinator: Coordinator {
         navigationController.popViewController(animated: true)
     }
     
+    func showFontPicker(with delegate: UIFontPickerViewControllerDelegate) {
+        let vc = factory.createFontPicker()
+        vc.delegate = delegate
+        navigationController.present(vc, animated: true)
+    }
+    
+    func showImagePicker(with delegate: (UIImagePickerControllerDelegate & UINavigationControllerDelegate)) {
+        let vc = factory.createImagePicker()
+        vc.delegate = delegate
+        navigationController.present(vc, animated: true)
+    }
+    
 }

@@ -11,8 +11,8 @@ import Foundation
 protocol PersistentProviderProtocol {
     var fetchController: NSFetchedResultsController<Notes> { get }
     
-    func saveNewNote(title: String, noteContext: NSAttributedString)
-    func updateNote(for indexPath: IndexPath, title: String, noteContext: NSAttributedString)
+    func saveNewNote(title: String, noteContext: NSMutableAttributedString)
+    func updateNote(for indexPath: IndexPath, title: String, noteContext: NSMutableAttributedString)
     func deleteNote(at indexPath: IndexPath)
 }
 
@@ -71,7 +71,7 @@ final class PersistentProvider: NSObject, PersistentProviderProtocol {
         }
     }
     
-    func saveNewNote(title: String, noteContext: NSAttributedString) {
+    func saveNewNote(title: String, noteContext: NSMutableAttributedString) {
         let note = Notes(context: backgroundViewContext)
         note.title = title
         note.noteContex = noteContext
@@ -79,7 +79,7 @@ final class PersistentProvider: NSObject, PersistentProviderProtocol {
         saveContext()
     }
     
-    func updateNote(for indexPath: IndexPath, title: String, noteContext: NSAttributedString) {
+    func updateNote(for indexPath: IndexPath, title: String, noteContext: NSMutableAttributedString) {
         let note = fetchController.object(at: indexPath)
         note.title = title
         note.noteContex = noteContext

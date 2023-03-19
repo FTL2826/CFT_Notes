@@ -15,4 +15,6 @@ protocol Coordinator: AnyObject {
     func showNewNoteScreen()
     func showExistNoteScreen(for indexPath: IndexPath)
     func popBack()
+    func showFontPicker(with delegate: UIFontPickerViewControllerDelegate)
+    func showImagePicker(with delegate: (UIImagePickerControllerDelegate & UINavigationControllerDelegate))
 }

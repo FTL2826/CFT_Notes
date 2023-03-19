@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit.UIFontPickerViewController
 
 class MainFlowFactory {
     
@@ -13,7 +14,7 @@ class MainFlowFactory {
         let persistentProvider = PersistentProvider.shared
         
         if !UserDefaults.standard.bool(forKey: "firstStart") {
-            persistentProvider.saveNewNote(title: "Your first note", noteContext: NSAttributedString(string: "Enter text here"))
+            persistentProvider.saveNewNote(title: "Your first note", noteContext: NSMutableAttributedString(string: "Enter text here"))
             UserDefaults.standard.set(true, forKey: "firstStart")
         }
         
@@ -51,6 +52,19 @@ class MainFlowFactory {
             indexPath: indexPath)
         
         return vc
+    }
+    
+    func createFontPicker() -> UIFontPickerViewController {
+        let config = UIFontPickerViewController.Configuration()
+        config.includeFaces = false
+        let vc = UIFontPickerViewController(configuration: config)
+        return vc
+    }
+    
+    func createImagePicker() -> UIImagePickerController {
+        let imagePicker = UIImagePickerController()
+        imagePicker.sourceType = .photoLibrary
+        return imagePicker
     }
     
 }
