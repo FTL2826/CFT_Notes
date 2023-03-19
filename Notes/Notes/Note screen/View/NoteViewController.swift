@@ -13,6 +13,7 @@ class NoteViewController: UIViewController {
     weak var coordinator: Coordinator?
     
     var indexPath: IndexPath?
+    var currentRange: NSRange?
     
     lazy var titleTextField: UITextField = {
         let tf = UITextField()
@@ -53,26 +54,43 @@ class NoteViewController: UIViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .save, primaryAction: UIAction {[weak self] _ in
             guard let title = self?.titleTextField.text,
-                  let note = self?.noteTextView.attributedText else { return }
+                  let attrStr = self?.noteTextView.attributedText else { return }
+            let note = NSMutableAttributedString(attributedString: attrStr)
             self?.viewModel.saveNote(for: self?.indexPath, title: title, noteContex: note)
             self?.coordinator?.popBack()
         })
+        
+        handleKeyboard()
     }
     
-    @objc func runCut() {
-        print("DEBUG PRINT:", "cut")
+    private func populateView() {
+        guard let indexPath = indexPath else { return }
+        let note = viewModel.fetchNote(for: indexPath)
+        titleTextField.text = note.title
+        noteTextView.attributedText = note.noteContex
     }
-    @objc func runCopy() {
-        print("DEBUG PRINT:", "copy")
+    
+    private func handleKeyboard() {
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self, selector: #selector(adjustForKeyboard), name: UIResponder.keyboardWillHideNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(adjustForKeyboard), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
-    @objc func runPaste() {
-        print("DEBUG PRINT:", "paste")
-    }
-    @objc func runPasteSearch() {
-        print("DEBUG PRINT:", "pastesearch")
-    }
-    @objc func runLook() {
-        print("DEBUG PRINT:", "look")
+    
+    @objc private func adjustForKeyboard(notification: Notification) {
+        guard let keyboardValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+        let keyboardScreenEndFrame = keyboardValue.cgRectValue
+        let keyboardViewEndFrame = view.convert(keyboardScreenEndFrame, from: view.window)
+        
+        if notification.name == UIResponder.keyboardWillHideNotification {
+            noteTextView.contentInset = .zero
+        } else {
+            noteTextView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardViewEndFrame.height - view.safeAreaInsets.bottom, right: 0)
+        }
+        
+        noteTextView.scrollIndicatorInsets = noteTextView.contentInset
+        
+        let selectedRange = noteTextView.selectedRange
+        noteTextView.scrollRangeToVisible(selectedRange)
     }
     
     private func setupUI() {
@@ -94,13 +112,6 @@ class NoteViewController: UIViewController {
             noteTextView.widthAnchor.constraint(equalTo: titleTextField.widthAnchor),
             noteTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
         ])
-    }
-    
-    private func populateView() {
-        guard let indexPath = indexPath else { return }
-        let note = viewModel.fetchNote(for: indexPath)
-        titleTextField.text = note.title
-        noteTextView.attributedText = note.noteContex
     }
 
 }
@@ -128,17 +139,155 @@ extension NoteViewController: UITextFieldDelegate {
 
 extension NoteViewController: UITextViewDelegate {
     func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
-        var additionalActions: [UIMenuElement] = []
+        var submenu: UIMenu? = nil
+        let string = NSMutableAttributedString(attributedString: textView.attributedText)
+
         if range.length > 0 {
-            let highlightAction = UIAction(title: "Highlight", image: UIImage(systemName: "highlighter")) { action in
-                // The highlight action.
+            let submenuItems: [UIMenuElement] = [
+                UIAction(title: "Bold", handler: { _ in
+                    let fontSize = textView.font?.pointSize ?? 18
+                    string.beginEditing()
+                    string.enumerateAttribute(.font, in: range) { value, range, stop in
+                        if let font = value as? UIFont {
+                            let currentFontDescriptor = font.fontDescriptor
+                            var traits = currentFontDescriptor.symbolicTraits
+                            if traits.contains(.traitBold) {
+                                traits.remove(.traitBold)
+                            } else {
+                                traits.insert(.traitBold)
+                            }
+                            guard let newFontDescriptor = currentFontDescriptor.withSymbolicTraits(traits) else { return }
+                            let newFont = UIFont(descriptor: newFontDescriptor, size: newFontDescriptor.pointSize)
+                            string.removeAttribute(.font, range: range)
+                            string.addAttribute(.font, value: newFont, range: range)
+                        }
+                    }
+                    string.endEditing()
+                    textView.attributedText = string
+                }),
+                UIAction(title: "Italic", handler: { _ in
+                    let fontSize = textView.font?.pointSize ?? 18
+                    string.beginEditing()
+                    string.enumerateAttribute(.font, in: range) { value, range, stop in
+                        if let font = value as? UIFont {
+                            let currentFontDescriptor = font.fontDescriptor
+                            var traits = currentFontDescriptor.symbolicTraits
+                            if traits.contains(.traitItalic) {
+                                traits.remove(.traitItalic)
+                            } else {
+                                traits.insert(.traitItalic)
+                            }
+                            guard let newFontDescriptor = currentFontDescriptor.withSymbolicTraits(traits) else { return }
+                            let newFont = UIFont(descriptor: newFontDescriptor, size: newFontDescriptor.pointSize)
+                            string.removeAttribute(.font, range: range)
+                            string.addAttribute(.font, value: newFont, range: range)
+                        }
+                    }
+                    string.endEditing()
+                    textView.attributedText = string
+                }),
+                UIAction(title: "underline", handler: { _ in
+                    string.beginEditing()
+                    
+                    if string.attribute(.underlineStyle, at: range.lowerBound, effectiveRange: nil) != nil {
+                        string.removeAttribute(.underlineStyle, range: range)
+                    } else {
+                        string.addAttributes([.underlineStyle : NSUnderlineStyle.single.rawValue], range: range)
+                    }
+                    string.endEditing()
+                    textView.attributedText = string
+                }),
+                UIAction(title: "Strikethrough", handler: { _ in
+                    string.beginEditing()
+                    
+                    if string.attribute(.strikethroughStyle, at: range.lowerBound, effectiveRange: nil) != nil {
+                        string.removeAttribute(.strikethroughStyle, range: range)
+                    } else {
+                        string.addAttributes([.strikethroughStyle : NSUnderlineStyle.single.rawValue], range: range)
+                    }
+                    string.endEditing()
+                    textView.attributedText = string
+                })
+            ]
+            submenu = UIMenu(title: "BIU", children: submenuItems)
+            
+            let changeFontAction = UIAction(title: "Font", handler: {[weak self] _ in
+                guard let self = self else { return }
+                self.currentRange = range
+                self.coordinator?.showFontPicker(with: self)
+            })
+            
+            let changeFontSizeAction = UIAction(title: "Size", handler: {[weak self] _ in
+                guard var newFontSize: CGFloat = textView.font?.pointSize else { return }
+                let ac = UIAlertController(title: "Enter font size", message: nil, preferredStyle: .alert)
+                ac.addTextField { tf in
+                    tf.placeholder = "18"
+                    tf.keyboardType = .numberPad
+                }
+                ac.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
+                    guard let text = ac.textFields?.first?.text,
+                            let size = Int(text) else { return }
+                    newFontSize = CGFloat(size)
+                    string.beginEditing()
+                    string.enumerateAttribute(.font, in: range) { value, range, stop in
+                        if let font = value as? UIFont {
+                            let fontDescriptor = font.fontDescriptor.withFamily(font.familyName)
+                            let newFont = UIFont(descriptor: fontDescriptor, size: newFontSize)
+                            string.removeAttribute(.font, range: range)
+                            string.addAttribute(.font, value: newFont, range: range)
+                        }
+                    }
+                    string.endEditing()
+                    textView.attributedText = string
+                }))
+                self?.currentRange = range
+                self?.present(ac, animated: true)
+            })
+            
+            let fontSubmenu = UIMenu(title: "Change font", children: [changeFontAction, changeFontSizeAction])
+            
+            if let submenu = submenu {
+                let submenuItem: [UIMenuElement] = [submenu, fontSubmenu]
+                return UIMenu(children: submenuItem + suggestedActions)
             }
-            additionalActions.append(highlightAction)
+        } else if range.length == 0 {
+            let imageAttachItem: UIMenuElement = UIAction(title: "Image attach") {[weak self] _ in
+                guard let self = self else { return }
+                self.currentRange = range
+                self.coordinator?.showImagePicker(with: self)
+            }
+            return UIMenu(children: [imageAttachItem] + suggestedActions )
         }
-        let addBookmarkAction = UIAction(title: "Add Bookmark", image: UIImage(systemName: "bookmark")) { action in
-            // The bookmark action.
+        return UIMenu(children: suggestedActions)
+    }
+}
+
+extension NoteViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        guard let image = info[.originalImage] as? UIImage,
+              let currentRange = currentRange else { return }
+        dismiss(animated: true) {[weak self] in
+            guard let self = self else { return }
+            let imageSize = self.noteTextView.bounds.width
+            let string = NSMutableAttributedString(attributedString: self.noteTextView.attributedText)
+            let attachment = NSTextAttachment(image: image.resized(to: CGSize(width: imageSize, height: imageSize)))
+            let attrString = NSAttributedString(attachment: attachment)
+            string.insert(attrString, at: currentRange.location)
+            self.noteTextView.attributedText = string
         }
-        additionalActions.append(addBookmarkAction)
-        return UIMenu(children: additionalActions + suggestedActions)
+    }
+}
+
+extension NoteViewController: UIFontPickerViewControllerDelegate {
+    func fontPickerViewControllerDidPickFont(_ viewController: UIFontPickerViewController) {
+        guard let font = viewController.selectedFontDescriptor,
+              let currentRange = currentRange else { return }
+        dismiss(animated: true) {[weak self] in
+            guard let self = self else { return }
+            let fontSize = self.noteTextView.font?.pointSize ?? 18
+            let string = NSMutableAttributedString(attributedString: self.noteTextView.attributedText)
+            string.setAttributes([.font : UIFont(descriptor: font, size: fontSize)], range: currentRange)
+            self.noteTextView.attributedText = string
+        }
     }
 }

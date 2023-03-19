@@ -17,7 +17,7 @@ extension Notes {
     }
 
     @NSManaged public var title: String
-    @NSManaged public var noteContex: NSAttributedString
+    @NSManaged public var noteContex: NSMutableAttributedString
     @NSManaged public var date: Date
 }
 

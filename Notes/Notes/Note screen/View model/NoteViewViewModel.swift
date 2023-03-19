@@ -8,8 +8,10 @@
 import Foundation
 
 protocol NoteViewViewModelProtocol {
-    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSAttributedString)
+    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSMutableAttributedString)
     func fetchNote(for indexPath: IndexPath) -> Notes
+    
+//    func makeBold(range: NSRange, in string: NSMutableAttributedString) -> NSMutableAttributedString
 }
 
 class NoteViewViewModel: NoteViewViewModelProtocol {
@@ -20,7 +22,7 @@ class NoteViewViewModel: NoteViewViewModelProtocol {
         self.persistentProvider = persistentProvider
     }
     
-    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSAttributedString) {
+    func saveNote(for indexPath: IndexPath?, title: String, noteContex: NSMutableAttributedString) {
         guard let indexPath = indexPath else {
             persistentProvider.saveNewNote(title: title, noteContext: noteContex)
             return
@@ -32,5 +34,9 @@ class NoteViewViewModel: NoteViewViewModelProtocol {
         let note = persistentProvider.fetchController.object(at: indexPath)
         return note
     }
+    
+//    func makeBold(range: NSRange, in string: NSMutableAttributedString) -> NSMutableAttributedString {
+//        string.addAttributes([.font : UIFont ], range: range)
+//    }
     
 }
