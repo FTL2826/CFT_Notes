@@ -57,11 +57,6 @@ class ListViewController: UIViewController {
             self?.coordinator?.showNewNoteScreen()
         })
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .refresh, primaryAction: UIAction { [weak self] _ in
-            self?.viewModel.fetchFromDB()
-            self?.tableView.reloadData()
-        })
-        
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         

@@ -14,7 +14,8 @@ class MainFlowFactory {
         let persistentProvider = PersistentProvider.shared
         
         if !UserDefaults.standard.bool(forKey: "firstStart") {
-            persistentProvider.saveNewNote(title: "Your first note", noteContext: NSMutableAttributedString(string: "Enter text here"))
+            let noteContext = NSMutableAttributedString(string: "Enter text here", attributes: [.foregroundColor : UIColor.label, .font : UIFont.systemFont(ofSize: 20)])
+            persistentProvider.saveNewNote(title: "Your first note", noteContext: noteContext)
             UserDefaults.standard.set(true, forKey: "firstStart")
         }
         

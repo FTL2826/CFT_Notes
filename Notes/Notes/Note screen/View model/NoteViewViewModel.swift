@@ -35,8 +35,4 @@ class NoteViewViewModel: NoteViewViewModelProtocol {
         return note
     }
     
-//    func makeBold(range: NSRange, in string: NSMutableAttributedString) -> NSMutableAttributedString {
-//        string.addAttributes([.font : UIFont ], range: range)
-//    }
-    
 }

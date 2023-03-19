@@ -27,6 +27,9 @@ class NoteViewController: UIViewController {
         tv.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         tv.isScrollEnabled = true
         tv.delegate = self
+        tv.textColor = .label
+        tv.keyboardDismissMode = .interactive
+        tv.keyboardType = .alphabet
         return tv
     }()
     
@@ -145,7 +148,6 @@ extension NoteViewController: UITextViewDelegate {
         if range.length > 0 {
             let submenuItems: [UIMenuElement] = [
                 UIAction(title: "Bold", handler: { _ in
-                    let fontSize = textView.font?.pointSize ?? 18
                     string.beginEditing()
                     string.enumerateAttribute(.font, in: range) { value, range, stop in
                         if let font = value as? UIFont {
@@ -166,7 +168,6 @@ extension NoteViewController: UITextViewDelegate {
                     textView.attributedText = string
                 }),
                 UIAction(title: "Italic", handler: { _ in
-                    let fontSize = textView.font?.pointSize ?? 18
                     string.beginEditing()
                     string.enumerateAttribute(.font, in: range) { value, range, stop in
                         if let font = value as? UIFont {
