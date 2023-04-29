@@ -1,5 +1,5 @@
 # Notes
-> My test project for [*CFT*](cft.ru). 
+> My test project for [*CFT*](https://www.cft.ru). 
 > Short video demonstration of app [*link*](https://drive.google.com/file/d/1S92E_uLpB1Xy7iFq3Wi2lpUE2RxXZzEk/view?usp=share_link)
 
 ## Table of content:
